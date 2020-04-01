@@ -2,7 +2,7 @@
 IsMainExternal = true
 do
     lfs = require 'lfs' -- https://keplerproject.github.io/luafilesystem/manual.html
-    dofile(lfs.currentdir()..'/run/lib/WCLua/WCLua.lua')
+    dofile(lfs.currentdir()..'/run/lib/WCLuaStdScript/WCLua.lua')
     --dofile('-','File')
 
     --dofile('+TableParser','main')
