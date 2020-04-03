@@ -1,4 +1,6 @@
+
 do
+    -- проверка на пустоту таблицы, используется в функциях вычисления ряда
     function emptyTable(tbl)
         if type(tbl)~='table' then
             return nil
@@ -8,6 +10,7 @@ do
         end
         return true
     end
+    -- вычисление функционального ряда по функции ряда
     function seriesFunc(f,tbl,...)
         if not (type(f)=='function') then
             return nil
@@ -46,9 +49,11 @@ do
         end
         return result
     end
+    -- вычисление по функции ряда, зависящей от единственного аргумента
     function seriesXFunc(f,x,...)
         return seriesFunc(f,{x},...)
     end
+    -- логическое И для ряда
     function seriesAndFunc(f,tbl,...)
         if not (type(f)=='function') then
             return nil
@@ -92,9 +97,11 @@ do
         end
         return true
     end
+    -- логическое И для функции ряда с единственным аргументом
     function seriesAndXFunc(f,x,...)
         return seriesAndFunc(f,{x},...)
     end
+    -- логическое ИЛИ
     function seriesOrFunc(f,tbl,...)
         if not (type(f)=='function') then
             return nil
@@ -141,6 +148,7 @@ do
     function seriesOrXFunc(f,x,...)
         return seriesOrFunc(f,{x},...)
     end
+    -- исключающее ИЛИ
     function seriesXorFunc(f,tbl,...)
         if not (type(f)=='function') then
             return nil
