@@ -1,8 +1,93 @@
 do
-    if not lfs then
-        lfs = require 'lfs'
+    tableInsert = table.insert
+    tableRemove = table.remove
+
+    function MergeTable(tbl1,tbl2)
+        for key, value in pairs(tbl2) do
+            tbl1[key] = value
+        end
+        return tbl1
+    end
+    function TableEmpty(tbl)
+        for _, _ in pairs(tbl) do
+            return false
+        end
+        return true
     end
 
+    function isTable(var)
+        return type(var)=='table'
+    end
+    local _isTable = isTable
+    function isTable(var,tbl,...)
+        local result = {}
+        if not _isTable(tbl) then
+            local a = tbl
+            tbl = {}
+        end
+        if _isTable(tbl) then
+            for key, _ in pairs(tbl) do
+                result[key] = _isTable(tbl[key])
+            end
+        end
+        tbl = {...}
+        for i = 1, tbl do
+            result[i] = _isTable({...}[i])
+        end
+    end
+
+    function formatType(type)
+        local typeIsId = nil
+        if type=='number' or type=='string' or type=='boolean' or type=='table' or type=='function' then
+            return type
+        elseif type=='n' then
+            type='number'
+        elseif type=='s' or type=='id' then
+            type='string'
+            if type=='id' then
+                typeIsId = true
+            end
+        elseif type=='b' or type=='bn' then
+            type='boolean'
+        elseif type=='t' then
+            type='table'
+        elseif type=='f' then
+            type='function'
+        else
+            type=nil
+        end
+        return type,typeIsId
+    end
+    local inj = formatType
+    function formatType(type,tbl,...)
+        
+    end
+    
+    function isType(var,varType)
+        if not isTable(arr) then
+            return type(var)==formatType(varType)
+        end
+        tableInsert(arr,1,var)
+        tableInsert(arr,2,varType)
+        local c=0
+        for i = 1, #arr do
+            if i%2>0 then
+                var = arr[i]
+                c=c+1
+            else
+                local varType = formatType(arr[i])
+                if varType and type(var)==varType then
+                    c=c+1
+                end
+            end
+        end
+        return c==#arr
+    end
+    -- print(IsType(5,'number','abc','string',4,'string'))
+
+    function isTable(tbl,...)
+        return type(var) == 'table'
+    end
     function isBoolean(var)
         return type(var) == 'boolean'
     end
@@ -11,9 +96,6 @@ do
     end
     function isString(var)
         return type(var) == 'string'
-    end
-    function isTable(var)
-        return type(var) == 'table'
     end
     function isFunction(var)
         return type(var) == 'function'
@@ -24,19 +106,25 @@ do
         end
         return obj.class == tostring(class)
     end
-    function newObject(class)
-        return { class = tostring(class) }
-    end
 
-    Path = {}
-    currentDir = lfs.currentdir()..'\\'..'run/lib/WCLua/'
-    projectDir = currentDir
     local exts = {
         lua = '.lua',
         txt = '.txt',
-        bat = '.bat'
+        bat = '.bat',
+        mdx = '.mdx',
+        mdl = '.mdl',
+        blp = '.blp',
+        tga = '.tga',
+        imp = '.imp',
+        wav = '.wav',
+        mp3 = '.mp3',
+        slk = '.slk',
+        j = '.j',
+        ai = '.ai',
+        pld = '.pld'
     }
-    function Path.get(path)
+    Path = {}
+    local function getPath(path)
         if not isString(path) then
             if isClass(path,Path) then
                 return path
@@ -44,7 +132,9 @@ do
                 return nil
             end
         end
-        local t = newObject(Path)
+        local t = {
+            class=tostring(Path)
+        }
         t.path = path
 
         function t.getFull()
@@ -106,13 +196,6 @@ do
             end
             return t.fileExt
         end
-        function Path.getFileExt(path)
-            local path = Path.get(path)
-            if not path then
-                return nil
-            end
-            return path.getFileExt()
-        end
 
         function t.getFilePath(ext)
             if t.filePath then
@@ -148,36 +231,41 @@ do
 
         return t
     end
-    function Path.getFull(path)
-        local path = Path.get(path)
+    function getFullPath(path)
+        local path = getPath(path)
         if not path then
             return nil
         end
         return path.getFull()
     end
-    function Path.isDir(path)
-        local path = Path.get(path)
+    function isDirPath(path)
+        local path = getPath(path)
         if not path then
             return nil
         end
         return path.checkIsDir()
     end
-    function Path.split(path)
-        local path = Path.get(path)
+    function splitPath(path)
+        local path = getPath(path)
         if not path then
             return nil
         end
         return path.split()
     end
-    function Path.getFilePath(path,ext)
-        local path = Path.get(path)
+    function getFileExt(path)
+        local path = getPath(path)
+        if not path then
+            return nil
+        end
+        return path.getFileExt()
+    end
+    function getFilePath(path,ext)
+        local path = getPath(path)
         if not path then
             return nil
         end
         return path.getFilePath(ext)
     end
-
-    tableInsert = table.insert
 
     local dofile_origin = dofile
     function dofile(path,files)
