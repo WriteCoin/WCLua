@@ -163,11 +163,69 @@ do
         end
         return path.getFilePath(ext)
     end
-    do
-        return nil
-    end
+    -- local dir,filename,ext = splitPath('_handles/')
+    -- print(filename=='')
+    -- do
+    --     return nil
+    -- end
+
     if not LAUNCHED_IN_GAME then
+
+        -- see if the file exists
+        function FileExists(file)
+            if type(file)~='string' then
+                return nil
+            end
+            local f = io.open(file,'rb')
+            if f then f:close() end
+            return f ~= nil
+        end
+
         local dofile_origin = dofile
+        function dofile(dirPath,filesTbl)
+            local files = {}
+            local dir = currentDir
+            if type(dirPath)=='string' then
+                if type(filesTbl)=='table' then
+                    files = filesTbl
+                elseif filesTbl then
+                    files = {filesTbl}
+                end
+                if isDirPath(dirPath) then
+                    dirPath = dirPath:gsub(currentDir,'')
+                    currentDir = currentDir .. dirPath .. '/'
+                else
+                    local dir,filename = splitPath(dirPath)
+                    if isDirPath(dir) then
+                        dir = dir:gsub(currentDir,'')
+                        currentDir = currentDir .. dir .. '/'
+                    end
+                    table.insert(files,1,filename)
+                end
+            elseif type(dirPath)=='table' then
+                files = dirPath
+            else
+                return nil
+            end
+            for i = 1, #files do
+                local path = files[i]
+                if type(path)=='string' then
+                    local path = getFilePath(path,'.lua')
+                    if FileExists(path) then
+                        dofile_origin(path)
+                    else
+                        print("Ошибка: файл " .. path .. " не существует.")
+                    end
+                end
+            end
+            currentDir = dir
+        end
+        dofile({
+            '_handles/_handles'
+        })
+        do
+            return nil
+        end
         function dofile(path,files)
             local isDir = isDirPath(path)
             if not (type(path)=='string' and (type(files)=='string' or type(files)=='table' or not isDir)) then

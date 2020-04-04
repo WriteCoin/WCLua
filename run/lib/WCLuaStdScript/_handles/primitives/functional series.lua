@@ -1,4 +1,7 @@
-
+print('functional series')
+do
+    return nil
+end
 do
     -- проверка на пустоту таблицы, используется в функциях вычисления ряда
     function emptyTable(tbl)
