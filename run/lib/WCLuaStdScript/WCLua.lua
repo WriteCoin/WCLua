@@ -1,4 +1,24 @@
 do
+    function string.slashDel(path,isAll)
+        if type(path)~='string' then
+            return nil
+        end
+        local len = path:len()
+        if path:sub(len,len)=='/' or path:sub(len,len)=='\\' then
+            local pos = nil
+            if isAll then
+                pos = len
+            else
+                pos=len-1
+            end
+            while path:sub(pos,pos)=='/' or path:sub(pos,pos)=='\\' do
+                pos=pos-1
+            end
+            path = path:sub(1,pos)
+        end
+        return path
+    end
+
     local exts = {
         lua = '.lua',
         txt = '.txt',
@@ -47,15 +67,15 @@ do
             if t.isDir then
                 return t.isDir
             end
-            local path = t.getFull()
-            local len = path:len()
-            if path:sub(len,len)=='/' or path:sub(len,len)=='\\' then
-                local pos = len-1
-                while path:sub(pos,pos)=='/' or path:sub(pos,pos)=='\\' do
-                    pos=pos-1
-                end
-                path = path:sub(1,pos)
-            end
+            local path = t.getFull():slashDel()
+            -- local len = path:len()
+            -- if path:sub(len,len)=='/' or path:sub(len,len)=='\\' then
+            --     local pos = len-1
+            --     while path:sub(pos,pos)=='/' or path:sub(pos,pos)=='\\' do
+            --         pos=pos-1
+            --     end
+            --     path = path:sub(1,pos)
+            -- end
             local attr = lfs.attributes(path)
             t.isDir = (attr and attr.mode == 'directory')
             return t.isDir
@@ -142,6 +162,10 @@ do
         end
         return path.checkIsDir()
     end
+    -- print(isDirPath(''))
+    -- do
+    --     return nil
+    -- end
     function splitPath(path,isFull)
         local path = getPath(path)
         if not path then
@@ -182,95 +206,43 @@ do
         end
 
         local dofile_origin = dofile
-        function dofile(dirPath,filesTbl)
+        function dofile(filesTbl)
             local files = {}
-            local dir = currentDir
-            if type(dirPath)=='string' then
-                if type(filesTbl)=='table' then
-                    files = filesTbl
-                elseif filesTbl then
-                    files = {filesTbl}
-                end
-                if isDirPath(dirPath) then
-                    dirPath = dirPath:gsub(currentDir,'')
-                    currentDir = currentDir .. dirPath .. '/'
-                else
-                    local dir,filename = splitPath(dirPath)
-                    if isDirPath(dir) then
-                        dir = dir:gsub(currentDir,'')
-                        currentDir = currentDir .. dir .. '/'
-                    end
-                    table.insert(files,1,filename)
-                end
-            elseif type(dirPath)=='table' then
-                files = dirPath
+            if type(filesTbl)=='table' then
+                files = filesTbl
+            elseif type(filesTbl)=='string' then
+                files = {filesTbl}
             else
                 return nil
             end
+            local dir = currentDir
             for i = 1, #files do
                 local path = files[i]
                 if type(path)=='string' then
-                    local path = getFilePath(path,'.lua')
-                    if FileExists(path) then
-                        dofile_origin(path)
-                    else
-                        print("Ошибка: файл " .. path .. " не существует.")
+                    local dirPath,filename = splitPath(path)
+                    if isDirPath(dirPath) then
+                        --print(dirPath,filename)
+                        if filename=='' then
+                            local pathCopy = path:slashDel(true)
+                            path = path .. pathCopy
+                        end
+                        --print('path: '..path)
+                        local path = getFilePath(path,'.lua')
+                        if FileExists(path) then
+                            dirPath = dirPath:gsub(currentDir,'')
+                            currentDir = currentDir .. dirPath .. '/'
+                            dofile_origin(path)
+                            currentDir = dir
+                        else
+                            print('Ошибка: файл ' .. path .. ' не существует.')
+                        end
                     end
                 end
             end
-            currentDir = dir
-        end
-        dofile({
-            '_handles/_handles'
-        })
-        do
-            return nil
-        end
-        function dofile(path,files)
-            local isDir = isDirPath(path)
-            if not (type(path)=='string' and (type(files)=='string' or type(files)=='table' or not isDir)) then
-                return nil
-            end
-            -- local result = {}
-            -- for i = 1, #files do
-            --     local path = getFilePath(files[i],'.lua')
-            --     if path then
-            --         table.insert(result,path)
-            --     end
-            -- end
-            if not files then
-                files = {}
-            end
-            local dir = currentDir
-            if not isDir then
-                table.insert(files,1,path)
-
-                print(splitPath(path))
-            else
-                currentDir = currentDir..path..'/'
-            end
-            do
-                return nil
-            end
-            if type(files)=='string' then
-                files = getFilePath(files,'.lua')
-                local file = files
-                files = {}
-                table.insert(files,file)
-            end
-            -- for i = 1, #result do
-            --     print(currentDir)
-            --     dofile_origin(result[i])
-            -- end
-            for i = 1, #files do
-                local path = getFilePath(files[i],'.lua')
-                if path then
-                    dofile_origin(files[i])
-                end
-            end
-            -- print(currentDir)
-            currentDir = dir
         end
     end
 end
-dofile('_handles/_handles')
+dofile({
+    '_handles/',
+    
+})

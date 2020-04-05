@@ -1,5 +1,5 @@
 print('_handles')
-dofile('primitives/primitives')
+dofile('primitives/')
 
 dofile({
     'Ability'
