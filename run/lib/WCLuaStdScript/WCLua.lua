@@ -76,7 +76,7 @@ do
             --     end
             --     path = path:sub(1,pos)
             -- end
-            local attr = lfs.attributes(path)
+            local attr = require('lfs').attributes(path)
             t.isDir = (attr and attr.mode == 'directory')
             return t.isDir
         end
@@ -244,5 +244,5 @@ do
 end
 dofile({
     '_handles/',
-    
+
 })

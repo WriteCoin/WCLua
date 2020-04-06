@@ -1,3 +1,4 @@
+print('table')
 do
     function MergeTable(tbl1,tbl2)
         for key, value in pairs(tbl2) do
@@ -71,6 +72,6 @@ do
         printTable(tbl[1],tbl[2])
     end
 
-    seriesFunc(_printTable,{{{1,2,3},'table1'},{{4,5,6},'table2'}})
-    printTable(seriesXFunc(tostring,5,10,15,20))
+    -- seriesFunc(_printTable,{{{1,2,3},'table1'},{{4,5,6},'table2'}})
+    -- printTable(seriesXFunc(tostring,5,10,15,20))
 end

@@ -1,2 +1,6 @@
 print('primitives')
-dofile('functional series')
+dofile({
+    'functional series',
+    'table',
+    'types'
+})

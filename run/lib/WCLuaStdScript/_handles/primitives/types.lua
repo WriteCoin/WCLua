@@ -1,24 +1,25 @@
+print('types')
 do
-    function isTable(var)
-        return type(var)=='table'
-    end
-    local _isTable = isTable
-    function isTable(var,tbl,...)
-        local result = {}
-        if not _isTable(tbl) then
-            local a = tbl
-            tbl = {}
-        end
-        if _isTable(tbl) then
-            for key, _ in pairs(tbl) do
-                result[key] = _isTable(tbl[key])
-            end
-        end
-        tbl = {...}
-        for i = 1, tbl do
-            result[i] = _isTable({...}[i])
-        end
-    end
+    -- function isTable(var)
+    --     return type(var)=='table'
+    -- end
+    -- local _isTable = isTable
+    -- function isTable(var,tbl,...)
+    --     local result = {}
+    --     if not _isTable(tbl) then
+    --         local a = tbl
+    --         tbl = {}
+    --     end
+    --     if _isTable(tbl) then
+    --         for key, _ in pairs(tbl) do
+    --             result[key] = _isTable(tbl[key])
+    --         end
+    --     end
+    --     tbl = {...}
+    --     for i = 1, tbl do
+    --         result[i] = _isTable({...}[i])
+    --     end
+    -- end
 
     function formatType(type)
         local typeIsId = nil

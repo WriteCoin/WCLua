@@ -1,8 +1,5 @@
 print('functional series')
 do
-    return nil
-end
-do
     -- проверка на пустоту таблицы, используется в функциях вычисления ряда
     function emptyTable(tbl)
         if type(tbl)~='table' then
@@ -200,7 +197,6 @@ do
         return seriesXorFunc(f,{x},...)
     end
 
-    
     -- function sum(x,y)
     --     if not (type(x)=='number' and type(y)=='number') then
     --         return nil
