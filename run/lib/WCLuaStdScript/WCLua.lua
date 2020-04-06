@@ -1,50 +1,52 @@
 do
-    if not lfs then
-        lfs = require 'lfs'
-    end
-
-    function isBoolean(var)
-        return type(var) == 'boolean'
-    end
-    function isNumber(var)
-        return type(var) == 'number'
-    end
-    function isString(var)
-        return type(var) == 'string'
-    end
-    function isTable(var)
-        return type(var) == 'table'
-    end
-    function isFunction(var)
-        return type(var) == 'function'
-    end
-    function isClass(obj,class)
-        if not isTable(obj) then
+    function string.slashDel(path,isAll)
+        if type(path)~='string' then
             return nil
         end
-        return obj.class == tostring(class)
-    end
-    function newObject(class)
-        return { class = tostring(class) }
+        local len = path:len()
+        if path:sub(len,len)=='/' or path:sub(len,len)=='\\' then
+            local pos = nil
+            if isAll then
+                pos = len
+            else
+                pos=len-1
+            end
+            while path:sub(pos,pos)=='/' or path:sub(pos,pos)=='\\' do
+                pos=pos-1
+            end
+            path = path:sub(1,pos)
+        end
+        return path
     end
 
-    Path = {}
-    currentDir = lfs.currentdir()..'\\'..'run/lib/WCLua/'
-    projectDir = currentDir
     local exts = {
         lua = '.lua',
         txt = '.txt',
-        bat = '.bat'
+        bat = '.bat',
+        mdx = '.mdx',
+        mdl = '.mdl',
+        blp = '.blp',
+        tga = '.tga',
+        imp = '.imp',
+        wav = '.wav',
+        mp3 = '.mp3',
+        slk = '.slk',
+        j = '.j',
+        ai = '.ai',
+        pld = '.pld'
     }
-    function Path.get(path)
-        if not isString(path) then
-            if isClass(path,Path) then
+    Path = {}
+    local function getPath(path)
+        if type(path) ~= 'string' then
+            if path.class == tostring(Path) then
                 return path
             else
                 return nil
             end
         end
-        local t = newObject(Path)
+        local t = {
+            class=tostring(Path)
+        }
         t.path = path
 
         function t.getFull()
@@ -65,26 +67,31 @@ do
             if t.isDir then
                 return t.isDir
             end
-            local path = t.getFull()
-            local len = path:len()
-            if path:sub(len,len)=='/' or path:sub(len,len)=='\\' then
-                local pos = len-1
-                while path:sub(pos,pos)=='/' or path:sub(pos,pos)=='\\' do
-                    pos=pos-1
-                end
-                path = path:sub(1,pos)
-            end
-            local attr = lfs.attributes(path)
+            local path = t.getFull():slashDel()
+            -- local len = path:len()
+            -- if path:sub(len,len)=='/' or path:sub(len,len)=='\\' then
+            --     local pos = len-1
+            --     while path:sub(pos,pos)=='/' or path:sub(pos,pos)=='\\' do
+            --         pos=pos-1
+            --     end
+            --     path = path:sub(1,pos)
+            -- end
+            local attr = require('lfs').attributes(path)
             t.isDir = (attr and attr.mode == 'directory')
             return t.isDir
         end
         
-        function t.split()
+        function t.split(isFull)
             if t.dirPath or t.fileName or t.ext then
                 return t.dirPath, t.fileName, t.ext
             end
             local dirpath, filename, ext
-            local path = t.getFull()
+            local path
+            if isFull then
+                path = t.getFull()
+            else
+                path = t.path
+            end
             dirpath, filename = path:match("^%s*(.-)([^\\/]*)$")
             if filename then
                 filename, ext = filename:match("([^%.]*)%.?(.*)$")
@@ -106,25 +113,18 @@ do
             end
             return t.fileExt
         end
-        function Path.getFileExt(path)
-            local path = Path.get(path)
-            if not path then
-                return nil
-            end
-            return path.getFileExt()
-        end
 
         function t.getFilePath(ext)
             if t.filePath then
                 return t.filePath
             end
-            if isString(ext) then
+            if type(ext)=='string' then
                 local len = ext:len()
                 if ext:sub(1,1)=='.' and exts[ext:sub(2,len)] then
                     ext = ext:sub(2,len)
                 end
             end
-            local isExt = (isString(ext) and exts[ext])
+            local isExt = (type(ext)=='string' and exts[ext])
             t.fileExt = t.getFileExt()
             t.fullPath = t.getFull()
             if not t.fileExt then
@@ -148,60 +148,101 @@ do
 
         return t
     end
-    function Path.getFull(path)
-        local path = Path.get(path)
+    function getFullPath(path)
+        local path = getPath(path)
         if not path then
             return nil
         end
         return path.getFull()
     end
-    function Path.isDir(path)
-        local path = Path.get(path)
+    function isDirPath(path)
+        local path = getPath(path)
         if not path then
             return nil
         end
         return path.checkIsDir()
     end
-    function Path.split(path)
-        local path = Path.get(path)
+    -- print(isDirPath(''))
+    -- do
+    --     return nil
+    -- end
+    function splitPath(path,isFull)
+        local path = getPath(path)
         if not path then
             return nil
         end
-        return path.split()
+        return path.split(isFull)
     end
-    function Path.getFilePath(path,ext)
-        local path = Path.get(path)
+    function getFileExt(path)
+        local path = getPath(path)
+        if not path then
+            return nil
+        end
+        return path.getFileExt()
+    end
+    function getFilePath(path,ext)
+        local path = getPath(path)
         if not path then
             return nil
         end
         return path.getFilePath(ext)
     end
+    -- local dir,filename,ext = splitPath('_handles/')
+    -- print(filename=='')
+    -- do
+    --     return nil
+    -- end
 
-    tableInsert = table.insert
+    if not LAUNCHED_IN_GAME then
 
-    local dofile_origin = dofile
-    function dofile(path,files)
-        if not (isString(path) and (isString(files) or isTable(files))) then
-            return nil
+        -- see if the file exists
+        function FileExists(file)
+            if type(file)~='string' then
+                return nil
+            end
+            local f = io.open(file,'rb')
+            if f then f:close() end
+            return f ~= nil
         end
-        if isString(files) then
-            files = Path.getFilePath(files,'.lua')
-            local file = files
-            files = {}
-            tableInsert(files,file)
-        end
-        local dir = currentDir
-        if not Path.isDir(path) then
-            tableInsert(files,1,path)
-        else
-            currentDir = currentDir..path..'/'
-        end
-        for i = 1, #files do
-            local path = Path.getFilePath(files[i],'.lua')
-            if path then
-                dofile_origin(files[i])
+
+        local dofile_origin = dofile
+        function dofile(filesTbl)
+            local files = {}
+            if type(filesTbl)=='table' then
+                files = filesTbl
+            elseif type(filesTbl)=='string' then
+                files = {filesTbl}
+            else
+                return nil
+            end
+            local dir = currentDir
+            for i = 1, #files do
+                local path = files[i]
+                if type(path)=='string' then
+                    local dirPath,filename = splitPath(path)
+                    if isDirPath(dirPath) then
+                        --print(dirPath,filename)
+                        if filename=='' then
+                            local pathCopy = path:slashDel(true)
+                            path = path .. pathCopy
+                        end
+                        --print('path: '..path)
+                        local path = getFilePath(path,'.lua')
+                        if FileExists(path) then
+                            dirPath = dirPath:gsub(currentDir,'')
+                            currentDir = currentDir .. dirPath .. '/'
+                            dofile_origin(path)
+                            currentDir = dir
+                        else
+                            print('Ошибка: файл ' .. path .. ' не существует.')
+                        end
+                    end
+                end
             end
         end
-        currentDir = dir
     end
 end
+dofile({
+    '_handles/',
+
+})
