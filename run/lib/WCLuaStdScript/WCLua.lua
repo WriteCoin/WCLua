@@ -1,248 +1,268 @@
+tableInsert = table.insert
+tableRemove = table.remove
+tableUnpack = table.unpack
+tablePack = table.pack
+
+function isEmptyTable1(tbl)
+    if type(tbl)~='table' then
+        return nil
+    end
+    local _,v = next(tbl)
+    return (v==nil)
+end
+
+-- local t = {}
+-- print(isEmptyTable(t))
+-- do
+--     return nil
+-- end
+
+-- local function test()
+--     return nil,5
+-- end
+-- if tableUnpack(tablePack(test())) then
+--     print('+')
+-- end
+-- do
+--     return nil
+-- end
+
+-- local t = {{1}}
+-- print(#tableUnpack(t))
+-- do
+--     return nil
+-- end
+
+-- local function test1(a,b)
+-- end
+-- print(string.dump(test1))
+-- local function test1(a)
+-- end
+-- print(string.dump(test1))
+-- for key, value in pairs(string) do
+--     if type(value)=='function' then
+--         print(key)
+--     end
+-- end
+-- do
+--     return nil
+-- end
+
+local export = {}
 do
-    function string.slashDel(path,isAll)
-        if type(path)~='string' then
+    local tableInsert = tableInsert
+    local tableUnpack = tableUnpack
+    local tablePack = tablePack
+    local next = next
+    local type = type
+
+    local function getTblValues(f,tbl)
+        if type(f)~='function' or type(tbl)~='table' then
             return nil
         end
-        local len = path:len()
-        if path:sub(len,len)=='/' or path:sub(len,len)=='\\' then
-            local pos = nil
-            if isAll then
-                pos = len
-            else
-                pos=len-1
-            end
-            while path:sub(pos,pos)=='/' or path:sub(pos,pos)=='\\' do
-                pos=pos-1
-            end
-            path = path:sub(1,pos)
+        local values = f(tableUnpack(tbl))
+        local tblValues = tablePack(values)
+        if #tblValues==1 then
+            return tableUnpack(tblValues)
+        else
+            return tblValues
         end
-        return path
     end
+    export.getTblValues = getTblValues
 
-    local exts = {
-        lua = '.lua',
-        txt = '.txt',
-        bat = '.bat',
-        mdx = '.mdx',
-        mdl = '.mdl',
-        blp = '.blp',
-        tga = '.tga',
-        imp = '.imp',
-        wav = '.wav',
-        mp3 = '.mp3',
-        slk = '.slk',
-        j = '.j',
-        ai = '.ai',
-        pld = '.pld'
-    }
-    Path = {}
-    local function getPath(path)
-        if type(path) ~= 'string' then
-            if path.class == tostring(Path) then
-                return path
+    local function seriesFunc(f,tbl,...)
+        local result = {}
+        local args = {...}
+        if type(tbl)=='table' then
+            if tbl[1] and not tbl.class then
+                tableInsert(result,getTblValues(f,tbl))
             else
+                tableInsert(args,1,tbl)
+                return f(tableUnpack(args))
+            end
+        else
+            tableInsert(args,1,tbl)
+            return f(tableUnpack(args))
+        end
+        if #args==0 then
+            if #result==0 then
                 return nil
             end
+            return tableUnpack(result[1])
         end
-        local t = {
-            class=tostring(Path)
-        }
-        t.path = path
-
-        function t.getFull()
-            if t.fullPath then
-                return t.fullPath
+        for i = 1, #args do
+            if type(args[i])=='table' then
+                tableInsert(result,getTblValues(f,args[i]))
             end
-            local path = path
-            if not path:find(currentDir) then
-                path = currentDir .. path
-                t.fullPath = path
-            else
-                t.fullPath = t.path
-            end
-            return t.fullPath
         end
-
-        function t.checkIsDir()
-            if t.isDir then
-                return t.isDir
-            end
-            local path = t.getFull():slashDel()
-            -- local len = path:len()
-            -- if path:sub(len,len)=='/' or path:sub(len,len)=='\\' then
-            --     local pos = len-1
-            --     while path:sub(pos,pos)=='/' or path:sub(pos,pos)=='\\' do
-            --         pos=pos-1
-            --     end
-            --     path = path:sub(1,pos)
-            -- end
-            local attr = require('lfs').attributes(path)
-            t.isDir = (attr and attr.mode == 'directory')
-            return t.isDir
-        end
-        
-        function t.split(isFull)
-            if t.dirPath or t.fileName or t.ext then
-                return t.dirPath, t.fileName, t.ext
-            end
-            local dirpath, filename, ext
-            local path
-            if isFull then
-                path = t.getFull()
-            else
-                path = t.path
-            end
-            dirpath, filename = path:match("^%s*(.-)([^\\/]*)$")
-            if filename then
-                filename, ext = filename:match("([^%.]*)%.?(.*)$")
-            end
-            t.dirPath = dirpath
-            t.fileName = filename
-            t.ext = ext
-            return t.dirPath, t.fileName, t.ext
-        end
-
-        function t.getFileExt()
-            if t.fileExt then
-                return t.fileExt
-            end
-            t.fullPath = t.getFull()
-            local ext = t.fullPath:match("[^.]+$")
-            if exts[ext] then
-                t.fileExt = ext
-            end
-            return t.fileExt
-        end
-
-        function t.getFilePath(ext)
-            if t.filePath then
-                return t.filePath
-            end
-            if type(ext)=='string' then
-                local len = ext:len()
-                if ext:sub(1,1)=='.' and exts[ext:sub(2,len)] then
-                    ext = ext:sub(2,len)
-                end
-            end
-            local isExt = (type(ext)=='string' and exts[ext])
-            t.fileExt = t.getFileExt()
-            t.fullPath = t.getFull()
-            if not t.fileExt then
-                if not isExt then
-                    return nil
-                else
-                    t.filePath = t.fullPath .. exts[ext]
-                end
-            else
-                if not exts[t.fileExt] then
-                    t.fileExt = '.' .. t.fileExt
-                else
-                    t.fileExt = exts[t.fileExt]
-                end
-                if isExt then
-                    t.filePath = t.fullPath:gsub(t.fileExt,exts[ext],1)
-                end
-            end
-            return t.filePath
-        end
-
-        return t
+        return result
     end
-    function getFullPath(path)
-        local path = getPath(path)
-        if not path then
+
+    function getSeriesFunc(f)
+        if type(f) ~= 'function' then
             return nil
         end
-        return path.getFull()
+        return function(tbl,...)
+            return seriesFunc(f,tbl,...)
+        end, true
     end
-    function isDirPath(path)
-        local path = getPath(path)
-        if not path then
+    function getSeriesXFunc(f)
+        if type(f) ~= 'function' then
             return nil
         end
-        return path.checkIsDir()
-    end
-    -- print(isDirPath(''))
-    -- do
-    --     return nil
-    -- end
-    function splitPath(path,isFull)
-        local path = getPath(path)
-        if not path then
-            return nil
-        end
-        return path.split(isFull)
-    end
-    function getFileExt(path)
-        local path = getPath(path)
-        if not path then
-            return nil
-        end
-        return path.getFileExt()
-    end
-    function getFilePath(path,ext)
-        local path = getPath(path)
-        if not path then
-            return nil
-        end
-        return path.getFilePath(ext)
-    end
-    -- local dir,filename,ext = splitPath('_handles/')
-    -- print(filename=='')
-    -- do
-    --     return nil
-    -- end
-
-    if not LAUNCHED_IN_GAME then
-
-        -- see if the file exists
-        function FileExists(file)
-            if type(file)~='string' then
-                return nil
+        return function(tbl,...)
+            local args = {...}
+            for i = 1, #args do
+                args[i] = {args[i]}
             end
-            local f = io.open(file,'rb')
-            if f then f:close() end
-            return f ~= nil
-        end
+            return seriesFunc(f,{tbl},tableUnpack(args))
+        end, true
+    end
 
-        local dofile_origin = dofile
-        function dofile(filesTbl)
-            local files = {}
-            if type(filesTbl)=='table' then
-                files = filesTbl
-            elseif type(filesTbl)=='string' then
-                files = {filesTbl}
-            else
-                return nil
-            end
-            local dir = currentDir
-            for i = 1, #files do
-                local path = files[i]
-                if type(path)=='string' then
-                    local dirPath,filename = splitPath(path)
-                    if isDirPath(dirPath) then
-                        --print(dirPath,filename)
-                        if filename=='' then
-                            local pathCopy = path:slashDel(true)
-                            path = path .. pathCopy
-                        end
-                        --print('path: '..path)
-                        local path = getFilePath(path,'.lua')
-                        if FileExists(path) then
-                            dirPath = dirPath:gsub(currentDir,'')
-                            currentDir = currentDir .. dirPath .. '/'
-                            dofile_origin(path)
-                            currentDir = dir
-                        else
-                            print('Ошибка: файл ' .. path .. ' не существует.')
-                        end
+    local function seriesAndFunc(f,tbl,...)
+        local result = {}
+        local args = {...}
+        if type(tbl)=='table' then
+            if tbl[1] and not tbl.class then
+
+
+                local values = f(tableUnpack(tbl))
+                local tblValues = tablePack(values)
+                if #tblValues==1 then
+                    if not tableUnpack(tblValues) then
+                        return false
                     end
+                else
+                    tableInsert(result,tblValues)
+                end
+            else
+                tableInsert(args,1,tbl)
+                return f(tableUnpack(args))
+            end
+        else
+            tableInsert(args,1,tbl)
+            return f(tableUnpack(args))
+        end
+        if #args==0 then
+            if #result==0 then
+                return nil
+            end
+            return tableUnpack(result[1])
+        end
+        for i = 1, #args do
+            if type(args[i])=='table' then
+                local values = f(tableUnpack(args[i]))
+                local tblValues = tablePack(values)
+                if #tblValues==1 then
+                    tableInsert(result,tableUnpack(tblValues))
+                else
+                    tableInsert(result,tblValues)
                 end
             end
         end
+        return result
     end
 end
-dofile({
-    '_handles/',
+getTblValues = export.getTblValues
 
-})
+filter = getSeriesFunc(function(n,nr)
+    if type(n)=='number' and type(nr)=='number' then
+        return n>nr and n or nil
+    end
+    return nil
+end)
+sum = getSeriesFunc(function(tbl)
+    if type(tbl)~='table' then
+        return nil
+    end
+    local s = 0
+    for i = 1, #tbl do
+        if type(tbl[i])=='number' then
+            s=s+tbl[i]
+        end
+    end
+    return s
+end)
+print(sum(filter({1,3},{2,3},{3,3},{4,3},{5,3})))
+do
+    return nil
+end
+
+
+-- sum = getSeriesFunc(function(x,y)
+--     if type(x)=='number' and type(y)=='number' then
+--         return x+y
+--     end
+--     return nil
+-- end)
+-- print(tableUnpack(sum({1,2},{3,4},{5,6})))
+
+function formatType(type)
+    if type=='number' or type=='string' or type=='boolean' or type=='table' or type=='function' then
+        return type
+    elseif type=='n' then
+        return 'number'
+    elseif type=='s' or type=='id' then
+        if type=='id' then
+            return 'string',true
+        end
+        return 'string'
+    elseif type=='b' or type=='bn' then
+        return 'boolean'
+    elseif type=='t' then
+        return 'table'
+    elseif type=='f' then
+        return 'function'
+    else
+        return nil
+    end
+end
+
+function isAllTypes(t,...)
+    
+end
+do
+    return nil
+end
+
+function isAllType(t,...)
+    local args = ...
+    local len = #args
+    local t = formatType(t)
+    print(type(args[len]))
+    if type(args[len])~=t then
+        return false
+    end
+    tableRemove(args,len)
+    if not isTableEmpty(args) and not isAllType(t,...) then
+        return false
+    end
+    return true
+end
+print(isAllType('n',5,10,15,20))
+do
+    return nil
+end
+
+function mergeTable(tbl1,tbl2)
+    for key, value in pairs(tbl2) do
+        tbl1[key] = value
+    end
+    return tbl1
+end
+
+function isAllType(t,...)
+    local result = {}
+    local args = {...}
+    local t = formatType(t)
+    for i = 1, #args do
+        tableInsert(result,type(args[i])==t)
+    end
+    return result
+end
+
+function toboolean(n)
+    if type(n)=='boolean' then
+        
+    end
+end

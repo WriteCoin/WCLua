@@ -1,0 +1,11 @@
+-- function sum(x,y)
+--     if type(x)=='number' and type(y)=='number' then
+--         return x+y
+--     end
+--     return nil
+-- end
+-- sum = getSeriesFunc(sum)
+--print(tableUnpack(sum({1,2},{3,4},{5,6})))
+--type = getSeriesXFunc(type)
+--print(tableUnpack(type(5,10,'a',false)))
+--print(type({5,10}))
